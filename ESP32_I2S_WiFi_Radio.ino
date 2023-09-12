@@ -1,3 +1,20 @@
+/**
+ * This software is written for the ESP32 microcontroller. It follows Arduino coding conventions 
+ * with functions setup() and loop(). 
+ * This software creates an audio player that gets streaming audio data from internet URLs 
+ * using a connection to a WiFi network. 
+ * Your WiFi network's ssid and password must be configured in the code, before compiling and 
+ * uploading the code to your ESP32. 
+ * 
+ * Notes about the starup process and the LED indicators:
+ * 1) At startup, the ESP32 LED blinks once per second while attempting to connect to WiFi.
+ * 2) If WiFi connectivity succeeds, the blinking LED will turn off. 
+ * 3) If WiFi connectivity fails, the LED will blink S.O.S. continuously to indicate a startup failure. 
+ *      - Double check the values of the WiFi ssid and password in the code, if WiFi connectivity fails. 
+ * 
+ * Messages are printed to the Serial Monitor to show startup progress or failures.
+ */   
+
 ///////////////////////////////////////////////////////////////////////////
 // Special thanks to Wolle schreibfaul1 (https://github.com/schreibfaul1)
 //
@@ -8,15 +25,6 @@
 // https://github.com/schreibfaul1/ESP32-audioI2S/wiki
 ///////////////////////////////////////////////////////////////////////////
 
-/**
- * Notes about the starup process for this code:
- * 1) At startup, the ESP32 LED blinks once per second while attempting to connect to WiFi.
- * 2) If WiFi connectivity succeeds, the LED will remain on/solid for 2 seconds and then turn off. 
- * 3) If WiFi connectivity fails, the LED will blink rapidly and continuously to indicate that startup failed. 
- * 4) Double check the values of the WiFi ssid and password in the code, if WiFi connectivity fails. 
- * 
- * Messages are printed to the Serial Monitor during startup to show the startup progress (or failure).
- */   
 
 // arduino-cli upload -b esp32:esp32:uPesy_wroom -p /dev/tty.usbserial-0001 
 //#define FQBN        "esp32:esp32:uPesy_wroom"  //Fully Qualified Board Name (fqbn) for use with "arduino-cli upload -b" 
@@ -33,17 +41,17 @@
 #define I2S_BCLK      27  //GPIO 27 (serial clock. connects to BCLK pin on MAX98357A I2S amplifier)
 
 //ESP32 analog input pin -- used for volume control
-#define POT_PIN       34  //GPIO 34
-#define LED_PIN       2   //GPIO 2
+#define POT_PIN       34  //GPIO 34   //reads the potentiometer voltage (controls audio volume)
+#define LED_PIN       2   //GPIO 2    //used by the code to control the ESP32's blue LED 
 
-#define VOLUME_CONTROL_STEPS  100
-
-Audio audio;  //class from the ESP32-audioI2S library
+#define VOLUME_CONTROL_STEPS  100     //100 steps -- the potentiometer (on GPIO34) controls audio volume between zero and 100%
+#define WIFI_MAX_TRIES        10      //number of attempts to connect to WiFi during startup
 
 //WiFi account login
-String ssid       = "Aardvark";   //wifi network name 
-String password   = "";   //wifi password
+const String ssid         = "Aardvark";   //wifi network name 
+const String password     = "";   //wifi password
 
+Audio audio;  //class from the ESP32-audioI2S library
 
 void setupAudio(){
   Serial.println("Setting I2S output pins and volume level.");
@@ -67,9 +75,8 @@ void connectWiFi(){
 
   WiFi.begin(ssid.c_str(), password.c_str());
 
-  int wifi_max_tries = 10;
   int tries = 0;
-  while (WiFi.status() != WL_CONNECTED && tries < wifi_max_tries){
+  while (WiFi.status() != WL_CONNECTED && tries < WIFI_MAX_TRIES){
       tries++;
       Serial.print("Attempting to connect to WiFi. Try #");
       Serial.println(tries);
@@ -81,25 +88,17 @@ void connectWiFi(){
   }
 
   if (WiFi.status() == WL_CONNECTED){
-    // Turn the LED ON for a few seconds to indicate we successfully connected to WiFi
-    digitalWrite(LED_PIN, HIGH);
+    //WiFi connection succeeded. Turn the LED OFF. 
+    digitalWrite(LED_PIN, LOW);
     Serial.print("SUCCESS: connected to wifi network ");
     Serial.println(ssid);
-    delay(2000);
-    digitalWrite(LED_PIN, LOW);
   } else {
+    //WiFi connection FAILED. Blink S.O.S. with the LED.  
     while(true){
-      tries = 0;
-      Serial.print("ERROR: STOPPED. Failed to connect to wifi network ");
+      Serial.print("WiFi error: Failed to connect to ");
       Serial.println(ssid);
-      while (tries < 50){
-        digitalWrite(LED_PIN, HIGH);
-        delay(100);
-        digitalWrite(LED_PIN, LOW);
-        delay(100);
-        tries++;
-      }
-      delay(2000);
+      Serial.println("Check the code for the WiFi ssid and password.");
+      blinkSOS(5);
     }
   }
 
@@ -200,6 +199,35 @@ void connect(Audio *audio, int channel) {
     break;
   }
 
+}
+
+void blinkSOS(int repeats){
+  int tries = 0;
+  while (tries < repeats){
+
+      for (int i=0; i<3; i++) {
+        digitalWrite(LED_PIN, HIGH);
+        delay(200);
+        digitalWrite(LED_PIN, LOW);
+        delay(200);
+      }
+
+      for (int i=0; i<3; i++) {
+        delay(200);
+        digitalWrite(LED_PIN, HIGH);
+        delay(800);
+        digitalWrite(LED_PIN, LOW);
+      }
+
+      for (int i=0; i<3; i++) {
+        delay(200);
+        digitalWrite(LED_PIN, HIGH);
+        delay(200);
+        digitalWrite(LED_PIN, LOW);
+      }
+    delay(1000);
+    tries++;
+  }
 }
 
 void setup() {
