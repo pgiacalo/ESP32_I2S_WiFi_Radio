@@ -13,6 +13,9 @@
  *      - Double check the values of the WiFi ssid and password in the code, if WiFi connectivity fails. 
  * 
  * Messages are printed to the Serial Monitor to show startup progress or failures.
+ *
+ * This youtube video explains the ESP32 wiring, etc.
+ * https://www.youtube.com/watch?v=t4K1HBQUj-k
  */   
 
 ///////////////////////////////////////////////////////////////////////////
