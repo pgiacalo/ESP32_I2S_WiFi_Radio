@@ -8,6 +8,15 @@
 // https://github.com/schreibfaul1/ESP32-audioI2S/wiki
 ///////////////////////////////////////////////////////////////////////////
 
+/**
+ * Notes about the starup process for this code:
+ * 1) At startup, the ESP32 LED blinks once per second while attempting to connect to WiFi.
+ * 2) If WiFi connectivity succeeds, the LED will remain on/solid for 2 seconds and then turn off. 
+ * 3) If WiFi connectivity fails, the LED will blink rapidly and continuously to indicate that startup failed. 
+ * 4) Double check the values of the WiFi ssid and password in the code, if WiFi connectivity fails. 
+ * 
+ * Messages are printed to the Serial Monitor during startup to show the startup progress (or failure).
+ */   
 
 // arduino-cli upload -b esp32:esp32:uPesy_wroom -p /dev/tty.usbserial-0001 
 //#define FQBN        "esp32:esp32:uPesy_wroom"  //Fully Qualified Board Name (fqbn) for use with "arduino-cli upload -b" 
