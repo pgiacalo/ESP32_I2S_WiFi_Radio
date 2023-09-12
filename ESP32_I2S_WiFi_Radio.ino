@@ -25,6 +25,7 @@
 
 //ESP32 analog input pin -- used for volume control
 #define POT_PIN       34  //GPIO 34
+#define LED_PIN       2   //GPIO 2
 
 #define VOLUME_CONTROL_STEPS  100
 
@@ -35,37 +36,64 @@ String ssid       = "Aardvark";   //wifi network name
 String password   = "";   //wifi password
 
 
-void setup() {
+void setupAudio(){
+  Serial.println("Setting I2S output pins and volume level.");
 
-//  Serial.begin(115200);
+  //configure the I2S output pins
+  audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
 
+  //set the initial volume level
+  audio.setVolumeSteps(VOLUME_CONTROL_STEPS);
+  int volume = map(analogRead(POT_PIN), 0, 4095, 0, VOLUME_CONTROL_STEPS);  // map potentiometer value to a volume percentage
+  audio.setVolume(volume);
+  Serial.print("Volume set at ");
+  Serial.print(volume);
+  Serial.println("%");
+}
+
+void connectWiFi(){
   WiFi.disconnect();
 
   WiFi.mode(WIFI_STA);
 
   WiFi.begin(ssid.c_str(), password.c_str());
 
-  while (WiFi.status() != WL_CONNECTED)
+  int wifi_max_tries = 10;
+  int tries = 0;
+  while (WiFi.status() != WL_CONNECTED && tries < wifi_max_tries){
+      tries++;
+      Serial.print("Attempting to connect to WiFi. Try #");
+      Serial.println(tries);
+      //blink the LED while we are trying to connect
+      digitalWrite(LED_PIN, HIGH);
+      delay(500);
+      digitalWrite(LED_PIN, LOW);
+      delay(500);
+  }
 
-  delay(1500);
+  if (WiFi.status() == WL_CONNECTED){
+    // Turn the LED ON for a few seconds to indicate we successfully connected to WiFi
+    digitalWrite(LED_PIN, HIGH);
+    Serial.print("SUCCESS: connected to wifi network ");
+    Serial.println(ssid);
+    delay(2000);
+    digitalWrite(LED_PIN, LOW);
+  } else {
+    while(true){
+      tries = 0;
+      Serial.print("ERROR: STOPPED. Failed to connect to wifi network ");
+      Serial.println(ssid);
+      while (tries < 50){
+        digitalWrite(LED_PIN, HIGH);
+        delay(100);
+        digitalWrite(LED_PIN, LOW);
+        delay(100);
+        tries++;
+      }
+      delay(2000);
+    }
+  }
 
-  audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-
-  audio.setVolumeSteps(VOLUME_CONTROL_STEPS);
-
-  int volume = map(analogRead(POT_PIN), 0, 4095, 0, VOLUME_CONTROL_STEPS);  // map potentiometer value to a volume percentage
-  audio.setVolume(volume);
-
-  int channel = 1;
-  connect(&audio, channel);
-
-}
-
-void loop() {
-  int volume = map(analogRead(POT_PIN), 0, 4095, 0, VOLUME_CONTROL_STEPS);
-  audio.setVolume(volume);
-
-  audio.loop();
 }
 
 void connect(Audio *audio, int channel) {
@@ -163,4 +191,31 @@ void connect(Audio *audio, int channel) {
     break;
   }
 
+}
+
+void setup() {
+
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("--------------------------------------------");
+  Serial.println("------- Starting ESP32_I2S_WiFi_Radio-------");
+  Serial.println("--------------------------------------------");
+ 
+  pinMode(LED_PIN, OUTPUT); //use the LED to indicate WiFi status
+
+  connectWiFi();
+
+  setupAudio();
+
+  int channel = 1;
+  Serial.println("Playing audio...");
+  connect(&audio, channel);
+
+}
+
+void loop() {
+  int volume = map(analogRead(POT_PIN), 0, 4095, 0, VOLUME_CONTROL_STEPS);
+  audio.setVolume(volume);
+
+  audio.loop();
 }
