@@ -14,8 +14,9 @@
  * 
  * Messages are printed to the Serial Monitor to show startup progress or failures.
  *
- * This youtube video explains the ESP32 wiring, etc.
+ * These youtube videos explain the ESP32 wiring, code, etc.
  * https://www.youtube.com/watch?v=t4K1HBQUj-k
+ * https://www.youtube.com/watch?v=RtouR5P1dtU
  */   
 
 ///////////////////////////////////////////////////////////////////////////
