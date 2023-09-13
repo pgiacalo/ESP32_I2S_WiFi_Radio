@@ -39,9 +39,13 @@
 #include "Audio.h"
 
 //ESP32 I2S output pins
-#define I2S_DOUT      25  //GPIO 25 (digital output. connects to DIN pin on MAX98357A I2S amplifier)
-#define I2S_LRC       26  //GPIO 26 (left/right control. connects to LRC pin on MAX98357A I2S amplifier)
-#define I2S_BCLK      27  //GPIO 27 (serial clock. connects to BCLK pin on MAX98357A I2S amplifier)
+#define I2S_DOUT      25  //GPIO 25 (DATA - the digital output. connects to DIN pin on MAX98357A I2S amplifier)
+#define I2S_BCLK      26  //GPIO 26 (CLOCK - serial clock. connects to BCLK pin on MAX98357A I2S amplifier)
+#define I2S_LRC       27  //GPIO 27 (SELECT - left/right control. connects to LRC pin on MAX98357A I2S amplifier)
+
+//NOTES on MAX98357A wiring connections to setup the left and right channel outputs:
+//  Right Channel - connect the GAIN pin to VIN pin on the MAX98357A
+//  Left Channel  - connect the GAIN pin to GND pin on the MAX98357A
 
 //ESP32 analog input pin -- used for volume control
 #define POT_PIN       34  //GPIO 34   //reads the potentiometer voltage (controls audio volume)
@@ -237,9 +241,9 @@ void setup() {
 
   Serial.begin(115200);
   delay(1000);
-  Serial.println("--------------------------------------------");
-  Serial.println("------- Starting ESP32_I2S_WiFi_Radio-------");
-  Serial.println("--------------------------------------------");
+  Serial.println("---------------------------------------------");
+  Serial.println("------- Starting ESP32_I2S_WiFi_Radio -------");
+  Serial.println("---------------------------------------------");
  
   pinMode(LED_PIN, OUTPUT); //use the LED to indicate WiFi status
 
