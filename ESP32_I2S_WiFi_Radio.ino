@@ -17,39 +17,45 @@
  * These youtube videos explain the ESP32 wiring, code, etc.
  * https://www.youtube.com/watch?v=t4K1HBQUj-k
  * https://www.youtube.com/watch?v=RtouR5P1dtU
- */   
-
-///////////////////////////////////////////////////////////////////////////
-// Special thanks to Wolle schreibfaul1 (https://github.com/schreibfaul1)
-//
-// Requires the following ESP32 I2S audio library from github
-// https://github.com/schreibfaul1/ESP32-audioI2S
-//
-// The associated wiki page for this library is found here:
-// https://github.com/schreibfaul1/ESP32-audioI2S/wiki
-///////////////////////////////////////////////////////////////////////////
-
-
-// arduino-cli upload -b esp32:esp32:uPesy_wroom -p /dev/tty.usbserial-0001 
-//#define FQBN        "esp32:esp32:uPesy_wroom"  //Fully Qualified Board Name (fqbn) for use with "arduino-cli upload -b" 
-//#define PORT        "/dev/tty.usbserial-0001"  //the USB port connected to the ESP32. for use with "arduino-cli upload -p" 
-
+ *
+ *****************************************************************************************
+ * NOTES on MAX98357A wiring to setup the left and right audio channels:
+ *    REFERENCE: https: *learn.adafruit.com/adafruit-max98357-i2s-class-d-mono-amp/pinouts
+ *
+ *    LEFT CHANNEL:  If the voltage on SD is greater than 1.4V then the output is just the Left channel.
+ *    RIGHT CHANNEL: If the voltage on SD is between 0.77V and 1.4V then the output is just the Right channel.
+ *
+ *    There is an internal 100K pulldown resistor on SD so you need to 
+ *    use a pullup resistor on SD (to balance out the pulldown resistor).
+ *        -- with a 5v supply, I use a 100 ohm pullup resistor on the LEFT channel and 470 ohm on the RIGHT.
+ *
+ *    MONO:  If the voltage on SD is between 0.16V and 0.77V then the output is (Left + Right)/2, that is the stereo average. 
+ *    SHUTDOWN:  If SD is connected to ground directly (voltage is under 0.16V) then the amp is shut down
+ *            to ground directly (voltage is under 0.16V) then the amp is shut down
+ *
+ *****************************************************************************************
+ *
+ * Special thanks to Wolle schreibfaul1 ESP32-audioI2S library (https: *github.com/schreibfaul1)
+ *
+ * Requires the following ESP32 I2S audio library from github
+ * https: *github.com/schreibfaul1/ESP32-audioI2S
+ * The associated wiki page for this library is found here:
+ * https: *github.com/schreibfaul1/ESP32-audioI2S/wiki
+ ******************************************************************************************
+ */
 
 #include "Arduino.h"
 #include "WiFi.h"
 #include "Audio.h"
 
-//ESP32 I2S output pins
-#define I2S_DOUT      25  //GPIO 25 (DATA - the digital output. connects to DIN pin on MAX98357A I2S amplifier)
-#define I2S_BCLK      26  //GPIO 26 (CLOCK - serial clock. connects to BCLK pin on MAX98357A I2S amplifier)
-#define I2S_LRC       27  //GPIO 27 (SELECT - left/right control. connects to LRC pin on MAX98357A I2S amplifier)
+//ESP32 I2S digital output pins
+#define I2S_DOUT      25  //GPIO 25 (DATA Output - the digital output. connects to DIN pin on MAX98357A I2S amplifier)
+#define I2S_BCLK      26  //GPIO 26 (CLOCK Output - serial clock. connects to BCLK pin on MAX98357A I2S amplifier)
+#define I2S_LRC       27  //GPIO 27 (SELECT Output - left/right control. connects to LRC pin on MAX98357A I2S amplifier)
 
-//NOTES on MAX98357A wiring connections to setup the left and right channel outputs:
-//  Right Channel - connect the GAIN pin to VIN pin on the MAX98357A
-//  Left Channel  - connect the GAIN pin to GND pin on the MAX98357A
+//ESP32 analog input (WARNING: limit voltage to 3.3v maximum)
+#define POT_PIN       34  //GPIO 34   //input pin that reads the potentiometer voltage (to control the audio volume)
 
-//ESP32 analog input pin -- used for volume control
-#define POT_PIN       34  //GPIO 34   //reads the potentiometer voltage (controls audio volume)
 #define LED_PIN       2   //GPIO 2    //used by the code to control the ESP32's blue LED 
 
 #define VOLUME_CONTROL_STEPS  100     //100 steps -- the potentiometer (on GPIO34) controls audio volume between zero and 100%
@@ -115,6 +121,10 @@ void connectWiFi(){
 void connect(Audio *audio, int channel) {
   switch (channel){
   //  *** radio streams ***
+    // case 1:
+    // (*audio).connecttohost("https://www.kozco.com/tech/LRMonoPhase4.wav");   // left/right channel test
+    // break;
+  
     case 1:
     (*audio).connecttohost("http://rfcmedia2.streamguys1.com/thirdrock.mp3");   // aac
     break;
