@@ -14,10 +14,10 @@
  * 
  * Messages are printed to the Serial Monitor to show startup progress or failures.
  *
- * These youtube videos explain the ESP32 wiring, code, etc.
+ * These youtube videos explain the code, wiring, volume control, channel control, etc.
  * https://www.youtube.com/watch?v=t4K1HBQUj-k
- * https://www.youtube.com/watch?v=RtouR5P1dtU
- *
+ * https://www.youtube.com/watch?v=vFC1nT9BRMs
+ * https://www.youtube.com/watch?v=NlelI2dgCPU
  *****************************************************************************************
  * NOTES on MAX98357A wiring to setup the left and right audio channels:
  *    REFERENCE: https: *learn.adafruit.com/adafruit-max98357-i2s-class-d-mono-amp/pinouts
@@ -69,7 +69,7 @@ int currentChannelNumber = 1;
 
 //WiFi account login
 const String ssid         = "Aardvark";   //wifi network name 
-const String password     = "125125125";   //wifi password
+const String password     = "";   //wifi password
 
 Audio audio;  //class from the ESP32-audioI2S library
 
