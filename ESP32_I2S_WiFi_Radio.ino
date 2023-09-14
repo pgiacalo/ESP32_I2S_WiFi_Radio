@@ -54,16 +54,22 @@
 #define I2S_LRC       27  //GPIO 27 (SELECT Output - left/right control. connects to LRC pin on MAX98357A I2S amplifier)
 
 //ESP32 analog input (WARNING: limit voltage to 3.3v maximum)
-#define POT_PIN       34  //GPIO 34   //input pin that reads the potentiometer voltage (to control the audio volume)
+#define POT_PIN             34  //GPIO 34   //input pin used to control the audio volume
+#define CHAN_UP_PIN         35  //GPIO 35   //increases the channel number
+#define CHAN_DOWN_PIN       32  //GPIO 32   //decreases the channel number
+
+#define NUMBER_OF_CHANNELS  12  //this should match the number of URLs found in the connect() function below
 
 #define LED_PIN       2   //GPIO 2    //used by the code to control the ESP32's blue LED 
 
 #define VOLUME_CONTROL_STEPS  100     //100 steps -- the potentiometer (on GPIO34) controls audio volume between zero and 100%
 #define WIFI_MAX_TRIES        10      //number of attempts to connect to WiFi during startup
 
+int currentChannelNumber = 1;
+
 //WiFi account login
 const String ssid         = "Aardvark";   //wifi network name 
-const String password     = "";   //wifi password
+const String password     = "125125125";   //wifi password
 
 Audio audio;  //class from the ESP32-audioI2S library
 
@@ -111,30 +117,30 @@ void connectWiFi(){
     while(true){
       Serial.print("WiFi error: Failed to connect to ");
       Serial.println(ssid);
-      Serial.println("Check the code for the WiFi ssid and password.");
+      Serial.println("RE-CHECK YOUR WiFi SSID and PASSWORD.");
       blinkSOS(5);
     }
   }
 
 }
 
+//  Note: several more test audio files can be found here: 
+//  https://github.com/schreibfaul1/ESP32-audioI2S/tree/master/additional_info/Testfiles
 void connect(Audio *audio, int channel) {
   switch (channel){
-  //  *** radio streams ***
-    // case 1:
-    // (*audio).connecttohost("https://www.kozco.com/tech/LRMonoPhase4.wav");   // left/right channel test
-    // break;
   
+    //  *** radio streams ***
     case 1:
     (*audio).connecttohost("http://rfcmedia2.streamguys1.com/thirdrock.mp3");   // aac
     break;
-  
-    case 2: //problems with this channel
-    (*audio).connecttohost("http://stream.radioparadise.com/global-192");       // mp3
-    break;
 
+    // *** special test file to verify left and right channel stereo
+    case 2:
+    (*audio).connecttohost("https://github.com/pgiacalo/audio_test/raw/main/LeftRightCenterTest.mp3");        // mp3
+    break;
+      
     case 3:
-    (*audio).connecttohost("http://vis.media-ice.musicradio.com/CapitalMP3");   //horrible music!
+    (*audio).connecttohost("http://vis.media-ice.musicradio.com/CapitalMP3");   //
     break;
   
     case 4:
@@ -142,79 +148,55 @@ void connect(Audio *audio, int channel) {
     break;
   
     case 5:
-    (*audio).connecttohost("https://stream.srg-ssr.ch/rsp/aacp_48.asx");        // asx
+    (*audio).connecttohost("http://s1.knixx.fm:5347/dein_webradio_vbr.opus");   // opus (ogg) 
     break;
   
     case 6:
-    (*audio).connecttohost("http://tuner.classical102.com/listen.pls");         // pls
-    break;
-  
-    case 7:
-    (*audio).connecttohost("http://stream.radioparadise.com/flac");             // flac
-    break;
-  
-    case 8:
-    (*audio).connecttohost("http://stream.sing-sing-bis.org:8000/singsingFlac");  // flac (ogg)
-    break;
-  
-    case 9:
-    (*audio).connecttohost("http://s1.knixx.fm:5347/dein_webradio_vbr.opus");   // opus (ogg)
-    break;
-  
-    case 10:
     (*audio).connecttohost("http://stream2.dancewave.online:8080/dance.ogg");   // vorbis (ogg)
     break;
   
-    case 11:
-    (*audio).connecttohost("http://26373.live.streamtheworld.com:3690/XHQQ_FMAAC/HLSTS/playlist.m3u8");    // HLS
-    break;
-  
-    case 12:
+    case 7:
     (*audio).connecttohost("http://eldoradolive02.akamaized.net/hls/live/2043453/eldorado/master.m3u8");   // HLS (ts)
     break;
 
     //*** web files ***
-    case 13:
+    case 8:
+    (*audio).connecttohost("https://github.com/pgiacalo/audio_test/raw/main/sample.mp3");        // mp3
+    break;
+    
+    case 9:
     (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/Pink-Panther.wav");        // wav
     break;
-  
-    case 14:
-    (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/Santiano-Wellerman.flac"); // flac
-    break;
-  
-    case 15:
+
+    case 10:
     (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/Olsen-Banden.mp3");        // mp3
     break;
   
-    case 16:
+    case 11:
     (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/Miss-Marple.m4a");         // m4a (aac)
     break;
   
-    case 17:
-    (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/Collide.ogg");             // vorbis
-    break;
-  
-    case 18:
-    (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/sample.opus");             // opus
+    case 12:
+    (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/sample.opus");             // opus 
     break;
 
-    //*** local files ***
+    // //*** local files ***
   
-    case 19:
-    (*audio).connecttoFS(SD, "/test.wav");     // SD
-    break;
+    // case 19:
+    // (*audio).connecttoFS(SD, "/test.wav");     // SD
+    // break;
   
-    case 20:
-    (*audio).connecttoFS(SD_MMC, "/test.wav"); // SD_MMC
-    break;
+    // case 20:
+    // (*audio).connecttoFS(SD_MMC, "/test.wav"); // SD_MMC
+    // break;
   
-    case 21:
-    (*audio).connecttoFS(SPIFFS, "/test.wav"); // SPIFFS
-    break;
+    // case 21:
+    // (*audio).connecttoFS(SPIFFS, "/test.wav"); // SPIFFS
+    // break;
 
-    case 22:
-    (*audio).connecttospeech("Wenn die Hunde schlafen, kann der Wolf gut Schafe stehlen.", "de"); // Google TTS
-    break;
+    // case 22:
+    // (*audio).connecttospeech("Wenn die Hunde schlafen, kann der Wolf gut Schafe stehlen.", "de"); // Google TTS
+    // break;
   }
 
 }
@@ -262,15 +244,48 @@ void setup() {
 
   setupAudio();
 
-  int channel = 1;
+  currentChannelNumber = 1;
   Serial.println("Playing audio...");
-  connect(&audio, channel);
+  Serial.print("Playing Channel #");
+  Serial.println(currentChannelNumber);
+ 
+  connect(&audio, currentChannelNumber);
 
 }
 
 void loop() {
   int volume = map(analogRead(POT_PIN), 0, 4095, 0, VOLUME_CONTROL_STEPS);
   audio.setVolume(volume);
+
+  bool changingChannels = false;
+
+  int upButton = map(analogRead(CHAN_UP_PIN), 0, 4095, 0, 4095);
+  if (upButton > 3000){
+    // Serial.print("upButton pressed. Value=");Serial.println(upButton);
+    changingChannels = true;
+    currentChannelNumber = currentChannelNumber + 1;
+    //make sure we don't exceed the maximum number of available channels
+    if (currentChannelNumber > NUMBER_OF_CHANNELS){
+      currentChannelNumber = 1;
+    }
+  }
+
+  int downButton = map(analogRead(CHAN_DOWN_PIN), 0, 4095, 0, 4095);
+  if (downButton > 3000){
+    // Serial.print("downButton pressed. Value=");Serial.println(downButton);
+    changingChannels = true;
+    currentChannelNumber = currentChannelNumber - 1;
+    //make sure we don't go below zero with the channel number
+    if (currentChannelNumber < 1){
+      currentChannelNumber = NUMBER_OF_CHANNELS;
+    }
+  }
+
+  if (changingChannels){
+    Serial.print("Changing to Channel #");
+    Serial.println(currentChannelNumber);
+    connect(&audio, currentChannelNumber);
+  }
 
   audio.loop();
 }
