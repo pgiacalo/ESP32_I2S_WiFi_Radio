@@ -20,7 +20,7 @@
  * https://www.youtube.com/watch?v=NlelI2dgCPU
  *****************************************************************************************
  * NOTES on MAX98357A wiring to setup the left and right audio channels:
- *    REFERENCE: https: *learn.adafruit.com/adafruit-max98357-i2s-class-d-mono-amp/pinouts
+ *    REFERENCE: https://learn.adafruit.com/adafruit-max98357-i2s-class-d-mono-amp/pinouts
  *
  *    LEFT CHANNEL:  If the voltage on SD is greater than 1.4V then the output is just the Left channel.
  *    RIGHT CHANNEL: If the voltage on SD is between 0.77V and 1.4V then the output is just the Right channel.
@@ -40,13 +40,14 @@
  * Requires the following ESP32 I2S audio library from github
  * https: *github.com/schreibfaul1/ESP32-audioI2S
  * The associated wiki page for this library is found here:
- * https: *github.com/schreibfaul1/ESP32-audioI2S/wiki
+ * https://github.com/schreibfaul1/ESP32-audioI2S/wiki
  ******************************************************************************************
  */
 
 #include "Arduino.h"
 #include "WiFi.h"
 #include "Audio.h"
+#include <ezButton.h>
 
 //ESP32 I2S digital output pins
 #define I2S_DOUT      25  //GPIO 25 (DATA Output - the digital output. connects to DIN pin on MAX98357A I2S amplifier)
@@ -55,17 +56,22 @@
 
 //ESP32 analog input (WARNING: limit voltage to 3.3v maximum)
 #define POT_PIN             34  //GPIO 34   //input pin used to control the audio volume
-#define CHAN_UP_PIN         35  //GPIO 35   //increases the channel number
-#define CHAN_DOWN_PIN       32  //GPIO 32   //decreases the channel number
 
-#define NUMBER_OF_CHANNELS  12  //this should match the number of URLs found in the connect() function below
+#define CHAN_UP_PIN         4   //increases the channel number
+#define CHAN_DOWN_PIN       0   //decreases the channel number
+#define DEBOUNCE_TIME 50
+
+#define NUMBER_OF_CHANNELS  10  //this should match the number of URLs found in the connect() function below
 
 #define LED_PIN       2   //GPIO 2    //used by the code to control the ESP32's blue LED 
 
 #define VOLUME_CONTROL_STEPS  100     //100 steps -- the potentiometer (on GPIO34) controls audio volume between zero and 100%
 #define WIFI_MAX_TRIES        5      //number of attempts to connect to WiFi during startup
 
-int currentChannelNumber = 2;
+ezButton upButton(CHAN_UP_PIN);
+ezButton downButton(CHAN_DOWN_PIN);
+
+int currentChannelNumber = 1;
 
 //WiFi account login
 const String ssid         = "Aardvark";   //wifi network name 
@@ -142,43 +148,35 @@ void connect(Audio *audio, int channel) {
     break;
       
     case 3:
-    (*audio).connecttohost("http://vis.media-ice.musicradio.com/CapitalMP3");   //
-    break;
-  
-    case 4:
     (*audio).connecttohost("http://www.wdr.de/wdrlive/media/einslive.m3u");     // m3u
     break;
   
-    case 5:
+    case 4:
     (*audio).connecttohost("http://s1.knixx.fm:5347/dein_webradio_vbr.opus");   // opus (ogg) 
     break;
   
-    case 6:
-    (*audio).connecttohost("http://stream2.dancewave.online:8080/dance.ogg");   // vorbis (ogg)
-    break;
-  
-    case 7:
+    case 5:
     (*audio).connecttohost("http://eldoradolive02.akamaized.net/hls/live/2043453/eldorado/master.m3u8");   // HLS (ts)
     break;
 
     //*** web files ***
-    case 8:
+    case 6:
     (*audio).connecttohost("https://github.com/pgiacalo/audio_test/raw/main/sample.mp3");        // mp3
     break;
     
-    case 9:
+    case 7:
     (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/Pink-Panther.wav");        // wav
     break;
 
-    case 10:
+    case 8:
     (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/Olsen-Banden.mp3");        // mp3
     break;
   
-    case 11:
+    case 9:
     (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/Miss-Marple.m4a");         // m4a (aac)
     break;
   
-    case 12:
+    case 10:
     (*audio).connecttohost("https://github.com/schreibfaul1/ESP32-audioI2S/raw/master/additional_info/Testfiles/sample.opus");             // opus 
     break;
 
@@ -232,6 +230,14 @@ void blinkSOS(int repeats){
   }
 }
 
+void setupButtons(){
+  pinMode(CHAN_UP_PIN, INPUT_PULLUP);
+  pinMode(CHAN_DOWN_PIN, INPUT_PULLUP);
+
+  upButton.setDebounceTime(DEBOUNCE_TIME);
+  downButton.setDebounceTime(DEBOUNCE_TIME);
+}
+
 void setup() {
 
   Serial.begin(115200);
@@ -243,8 +249,13 @@ void setup() {
   pinMode(LED_PIN, OUTPUT); //use the LED to indicate WiFi status
 
   connectWiFi();
-
+  Serial.println("------- WiFi Successfully Connected -------");
+  
   setupAudio();
+  Serial.println("------- Audio Setup Complete -------");
+  
+  setupButtons();
+  Serial.println("------- setupButtons Complete -------");
 
   // currentChannelNumber = 1;
   Serial.println("Playing audio...");
@@ -261,30 +272,27 @@ void loop() {
 
   bool changingChannels = false;
 
-  int upButton = map(analogRead(CHAN_UP_PIN), 0, 4095, 0, 4095);
-  if (upButton > 3000){
-    // Serial.print("upButton pressed. Value=");Serial.println(upButton);
+    upButton.loop();
+   if ( upButton.isReleased() ) { 
     changingChannels = true;
     currentChannelNumber = currentChannelNumber + 1;
-    //make sure we don't exceed the maximum number of available channels
     if (currentChannelNumber > NUMBER_OF_CHANNELS){
       currentChannelNumber = 1;
     }
-  }
+   }
 
-  int downButton = map(analogRead(CHAN_DOWN_PIN), 0, 4095, 0, 4095);
-  if (downButton > 3000){
-    // Serial.print("downButton pressed. Value=");Serial.println(downButton);
+    downButton.loop();
+   if ( downButton.isReleased() ) { 
     changingChannels = true;
     currentChannelNumber = currentChannelNumber - 1;
-    //make sure we don't go below zero with the channel number
     if (currentChannelNumber < 1){
       currentChannelNumber = NUMBER_OF_CHANNELS;
     }
-  }
+
+   }
 
   if (changingChannels){
-    Serial.print("Changing to Channel #");
+    Serial.print("Playing Channel #");
     Serial.println(currentChannelNumber);
     connect(&audio, currentChannelNumber);
   }
