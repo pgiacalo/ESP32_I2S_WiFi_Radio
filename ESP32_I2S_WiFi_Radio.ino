@@ -63,9 +63,9 @@
 #define LED_PIN       2   //GPIO 2    //used by the code to control the ESP32's blue LED 
 
 #define VOLUME_CONTROL_STEPS  100     //100 steps -- the potentiometer (on GPIO34) controls audio volume between zero and 100%
-#define WIFI_MAX_TRIES        10      //number of attempts to connect to WiFi during startup
+#define WIFI_MAX_TRIES        5      //number of attempts to connect to WiFi during startup
 
-int currentChannelNumber = 1;
+int currentChannelNumber = 2;
 
 //WiFi account login
 const String ssid         = "Aardvark";   //wifi network name 
@@ -117,7 +117,9 @@ void connectWiFi(){
     while(true){
       Serial.print("WiFi error: Failed to connect to ");
       Serial.println(ssid);
-      Serial.println("RE-CHECK YOUR WiFi SSID and PASSWORD.");
+      Serial.println("------------------------------------");
+      Serial.println("RE-CHECK YOUR WiFi SSID and PASSWORD");
+      Serial.println("------------------------------------");
       blinkSOS(5);
     }
   }
@@ -244,7 +246,7 @@ void setup() {
 
   setupAudio();
 
-  currentChannelNumber = 1;
+  // currentChannelNumber = 1;
   Serial.println("Playing audio...");
   Serial.print("Playing Channel #");
   Serial.println(currentChannelNumber);
