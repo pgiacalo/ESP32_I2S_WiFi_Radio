@@ -29,7 +29,7 @@
  *    use a pullup resistor on SD (to balance out the pulldown resistor).
  *        -- with a 5v supply, I use a 100kohm pullup resistor on the LEFT channel and 470kohm on the RIGHT.
  *        -- these pullup resistors are connected between VCC and the SD pin on the MAX98357A boards.
- *
+ * 
  *    MONO:  If the voltage on SD is between 0.16V and 0.77V then the output is (Left + Right)/2, that is the stereo average. 
  *    SHUTDOWN:  If SD is connected to ground directly (voltage is under 0.16V) then the amp is shut down
  *            to ground directly (voltage is under 0.16V) then the amp is shut down
@@ -75,8 +75,8 @@ ezButton downButton(CHAN_DOWN_PIN);
 int currentChannelNumber = 1;
 
 //WiFi account login
-const String ssid         = "Aardvark";   //wifi network name 
-const String password     = "125125125";   //wifi password
+const String ssid         = "";   //wifi network name 
+const String password     = "";   //wifi password
 
 Audio audio;  //class from the ESP32-audioI2S library
 
