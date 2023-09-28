@@ -6,6 +6,17 @@
  * Your WiFi network's ssid and password must be configured in the code, before compiling and 
  * uploading the code to your ESP32. 
  * 
+ * These youtube videos explain the code, wiring, volume control, channel control buttons, etc.
+ * https://www.youtube.com/watch?v=t4K1HBQUj-k
+ * https://www.youtube.com/watch?v=vFC1nT9BRMs
+ * https://www.youtube.com/watch?v=NlelI2dgCPU
+ *
+ * *****************************************************************************************
+ * This project requires the following 3rd party libraries:
+ *  1) ezButton - add this to the Arduino IDE using the library manager
+ *  2) ESP32 I2S audio library - https://github.com/schreibfaul1/ESP32-audioI2S
+ * ****************************************************************************************
+ *
  * Notes about the starup process and the LED indicators:
  * 1) At startup, the ESP32 LED blinks once per second while attempting to connect to WiFi.
  * 2) If WiFi connectivity succeeds, the blinking LED will turn off. 
@@ -14,10 +25,6 @@
  * 
  * Messages are printed to the Serial Monitor to show startup progress or failures.
  *
- * These youtube videos explain the code, wiring, volume control, channel control, etc.
- * https://www.youtube.com/watch?v=t4K1HBQUj-k
- * https://www.youtube.com/watch?v=vFC1nT9BRMs
- * https://www.youtube.com/watch?v=NlelI2dgCPU
  *****************************************************************************************
  * NOTES on MAX98357A wiring to setup the left and right audio channels:
  *    REFERENCE: https://learn.adafruit.com/adafruit-max98357-i2s-class-d-mono-amp/pinouts
@@ -35,12 +42,10 @@
  *            to ground directly (voltage is under 0.16V) then the amp is shut down
  *
  *****************************************************************************************
+ * Special thanks to Wolle schreibfaul1 ESP32-audioI2S library
  *
- * Special thanks to Wolle schreibfaul1 ESP32-audioI2S library (https: *github.com/schreibfaul1)
- *
- * Requires the following ESP32 I2S audio library from github
- * https: *github.com/schreibfaul1/ESP32-audioI2S
- * The associated wiki page for this library is found here:
+ * https://github.com/schreibfaul1/ESP32-audioI2S
+ * The associated wiki page for this audio library is found here:
  * https://github.com/schreibfaul1/ESP32-audioI2S/wiki
  ******************************************************************************************
  */
@@ -59,7 +64,7 @@
 #define POT_PIN             34  //GPIO 34   //input pin used to control the audio volume
 
 #define CHAN_UP_PIN         4   //increases the channel number
-#define CHAN_DOWN_PIN       0   //decreases the channel number
+#define CHAN_DOWN_PIN       15  //decreases the channel number
 #define DEBOUNCE_TIME 50
 
 #define NUMBER_OF_CHANNELS  10  //this should match the number of URLs found in the connect() function below
@@ -273,7 +278,9 @@ void loop() {
 
   bool changingChannels = false;
 
-    upButton.loop();
+  upButton.loop();
+  downButton.loop();
+
    if ( upButton.isReleased() ) { 
     changingChannels = true;
     currentChannelNumber = currentChannelNumber + 1;
@@ -282,7 +289,6 @@ void loop() {
     }
    }
 
-    downButton.loop();
    if ( downButton.isReleased() ) { 
     changingChannels = true;
     currentChannelNumber = currentChannelNumber - 1;
